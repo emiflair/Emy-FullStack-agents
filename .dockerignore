@@ -1,0 +1,66 @@
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yaml
+.docker/
+
+# Documentation
+*.md
+docs/
+!README.md
+
+# Testing
+test_*.py
+tests/
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Generated projects (mounted as volume)
+projects/
+
+# macOS
+.DS_Store
+
+# Misc
+*.bak
+*.tmp

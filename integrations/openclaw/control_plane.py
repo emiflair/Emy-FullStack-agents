@@ -324,7 +324,7 @@ class OpenClawControlPlane:
             from task_queue import Task, TaskPriority as TP
             task = Task(
                 task_id=str(uuid.uuid4()),
-                task_type="deployment",
+                task_name="deployment",
                 priority=TP.HIGH,
                 payload=params,
             )
@@ -349,7 +349,7 @@ class OpenClawControlPlane:
         from task_queue import Task, TaskPriority as TP
         task = Task(
             task_id=str(uuid.uuid4()),
-            task_type=task_data.get('type', 'general'),
+            task_name=task_data.get('type', 'general'),
             priority=TP.MEDIUM,
             payload=task_data,
         )
@@ -519,7 +519,7 @@ class OpenClawControlPlane:
             from task_queue import Task, TaskPriority as TP
             task = Task(
                 task_id=str(uuid.uuid4()),
-                task_type="ci_cd_pipeline",
+                task_name="ci_cd_pipeline",
                 priority=TP.HIGH,
                 payload={"trigger": "github_push", "data": data},
             )
@@ -534,7 +534,7 @@ class OpenClawControlPlane:
             from task_queue import Task, TaskPriority as TP
             task = Task(
                 task_id=str(uuid.uuid4()),
-                task_type="code_review",
+                task_name="code_review",
                 priority=TP.MEDIUM,
                 payload={"trigger": "pull_request", "data": data},
             )
@@ -549,7 +549,7 @@ class OpenClawControlPlane:
             from task_queue import Task, TaskPriority as TP
             task = Task(
                 task_id=str(uuid.uuid4()),
-                task_type="create_task",
+                task_name="create_task",
                 priority=TP.MEDIUM,
                 payload={"source": "github_issue", "data": data},
             )
