@@ -158,6 +158,8 @@ def cmd_logs(args):
 
 
 def main():
+    global API_URL, API_KEY
+    
     parser = argparse.ArgumentParser(
         description="OpenClaw CLI - Control the Emy-FullStack AI Agent System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -240,8 +242,7 @@ Examples:
     
     args = parser.parse_args()
     
-    # Update global API settings
-    global API_URL, API_KEY
+    # Update API settings from command line
     API_URL = args.api_url
     if args.api_key:
         API_KEY = args.api_key
