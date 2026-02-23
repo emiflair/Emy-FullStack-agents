@@ -1,0 +1,173 @@
+# Emy-FullStack AI Agent System
+# Production Docker Compose Configuration
+# 
+# Architecture:
+#   OpenClaw Control Plane (API Gateway) → Master Brain → 9 AI Agents
+#
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose logs -f openclaw   # View control plane logs
+#   docker-compose down               # Stop all services
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # OPENCLAW CONTROL PLANE (External API Gateway)
+  # ==========================================================================
+  openclaw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emy-openclaw
+    ports:
+      - "8080:8080"
+    environment:
+      # OpenAI API Key (required for AI code generation)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # OpenClaw API Key (for authenticating external requests)
+      - OPENCLAW_API_KEY=${OPENCLAW_API_KEY:-emy-secret-key-change-me}
+      # Redis connection
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      # Database (optional)
+      - DATABASE_URL=${DATABASE_URL:-postgresql://emy:emy@postgres:5432/emy_agents}
+      # Environment
+      - ENVIRONMENT=production
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - emy-network
+    volumes:
+      - ./projects:/app/projects  # Generated projects output
+
+  # ==========================================================================
+  # CELERY WORKER (Processes background tasks)
+  # ==========================================================================
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emy-worker
+    command: celery -A task_queue.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL:-postgresql://emy:emy@postgres:5432/emy_agents}
+    depends_on:
+      redis:
+        condition: service_healthy
+      openclaw:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - emy-network
+    volumes:
+      - ./projects:/app/projects
+
+  # ==========================================================================
+  # CELERY BEAT (Scheduled tasks)
+  # ==========================================================================
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emy-scheduler
+    command: celery -A task_queue.celery_app beat --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      worker:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - emy-network
+
+  # ==========================================================================
+  # REDIS (Message broker & cache)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: emy-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - emy-network
+    volumes:
+      - redis-data:/data
+
+  # ==========================================================================
+  # POSTGRESQL (Optional - for persistent storage)
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: emy-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=emy
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-emy_secure_password}
+      - POSTGRES_DB=emy_agents
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emy -d emy_agents"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - emy-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # ==========================================================================
+  # FLOWER (Celery monitoring - optional)
+  # ==========================================================================
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: emy-flower
+    command: celery -A task_queue.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - worker
+    restart: unless-stopped
+    networks:
+      - emy-network
+    profiles:
+      - monitoring  # Only starts with: docker-compose --profile monitoring up
+
+# ==========================================================================
+# NETWORKS & VOLUMES
+# ==========================================================================
+networks:
+  emy-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
