@@ -32,7 +32,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       # Database (optional)
-      - DATABASE_URL=${DATABASE_URL:-postgresql://emy:emy@postgres:5432/emy_agents}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://emy:emy_secure_password@postgres:5432/emy_agents}
       # Environment
       - ENVIRONMENT=production
     depends_on:
@@ -64,7 +64,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - DATABASE_URL=${DATABASE_URL:-postgresql://emy:emy@postgres:5432/emy_agents}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://emy:emy_secure_password@postgres:5432/emy_agents}
     depends_on:
       redis:
         condition: service_healthy
