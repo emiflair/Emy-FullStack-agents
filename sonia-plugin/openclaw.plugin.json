@@ -1,0 +1,157 @@
+{
+  "id": "sonia",
+  "pluginId": "sonia",
+  "displayName": "Sonia AI Assistant",
+  "version": "1.0.0",
+  "description": "Autonomous AI assistant for emails, account creation, social media, and task completion",
+  "author": "Emy",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "email": {"type": "string", "default": "sonia@wazhop.com"},
+      "whatsapp": {"type": "string", "default": "+971551994544"}
+    }
+  },
+  "tools": [
+    {
+      "name": "sonia_send_email",
+      "description": "Send an email from sonia@wazhop.com to any recipient",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "Recipient email address"},
+          "subject": {"type": "string", "description": "Email subject"},
+          "body": {"type": "string", "description": "Email body content (plain text or HTML)"},
+          "cc": {"type": "string", "description": "CC recipients (comma-separated)"},
+          "attachments": {"type": "string", "description": "File paths to attach (comma-separated)"}
+        },
+        "required": ["to", "subject", "body"]
+      }
+    },
+    {
+      "name": "sonia_check_email",
+      "description": "Check and read incoming emails for sonia@wazhop.com. Returns latest unread emails.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "folder": {"type": "string", "description": "Email folder (INBOX, Sent, etc.)"},
+          "limit": {"type": "number", "description": "Maximum emails to fetch (default: 10)"},
+          "unread_only": {"type": "boolean", "description": "Only show unread emails"}
+        }
+      }
+    },
+    {
+      "name": "sonia_reply_email",
+      "description": "Reply to an email",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message_id": {"type": "string", "description": "Original message ID to reply to"},
+          "body": {"type": "string", "description": "Reply content"}
+        },
+        "required": ["message_id", "body"]
+      }
+    },
+    {
+      "name": "sonia_create_account",
+      "description": "Create an account on a website using browser automation. Sonia will fill forms, verify emails, and complete signup.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "website": {"type": "string", "description": "Website URL (e.g., https://example.com/signup)"},
+          "username": {"type": "string", "description": "Desired username"},
+          "email": {"type": "string", "description": "Email to use (default: sonia@wazhop.com)"},
+          "password": {"type": "string", "description": "Password to use"},
+          "full_name": {"type": "string", "description": "Full name to use (default: Sonia Wazhop)"},
+          "details": {"type": "object", "description": "Additional fields as key-value pairs"}
+        },
+        "required": ["website"]
+      }
+    },
+    {
+      "name": "sonia_social_post",
+      "description": "Post content to social media platforms (requires logged-in session)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string", "description": "Platform: twitter, linkedin, instagram, facebook, tiktok"},
+          "content": {"type": "string", "description": "Post content/caption"},
+          "media_path": {"type": "string", "description": "Local path to image/video to upload"},
+          "media_url": {"type": "string", "description": "URL of media to download and post"},
+          "hashtags": {"type": "array", "description": "Hashtags to include"}
+        },
+        "required": ["platform", "content"]
+      }
+    },
+    {
+      "name": "sonia_social_engage",
+      "description": "Engage with social media content (like, comment, share, follow)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string", "description": "Social media platform"},
+          "action": {"type": "string", "description": "Action: like, comment, share, follow, unfollow"},
+          "target_url": {"type": "string", "description": "URL of post/profile"},
+          "comment_text": {"type": "string", "description": "Comment text if action is comment"}
+        },
+        "required": ["platform", "action", "target_url"]
+      }
+    },
+    {
+      "name": "sonia_browse_web",
+      "description": "Browse a website, interact with elements, fill forms, click buttons, extract data",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string", "description": "URL to visit"},
+          "actions": {"type": "array", "description": "Array of actions: [{action: 'click|fill|extract|screenshot|scroll', selector: 'css', value: 'text'}]"},
+          "wait_for": {"type": "string", "description": "CSS selector to wait for before actions"},
+          "extract_text": {"type": "boolean", "description": "Extract all visible text from page"}
+        },
+        "required": ["url"]
+      }
+    },
+    {
+      "name": "sonia_complete_task",
+      "description": "Execute a complex multi-step task autonomously and report results via WhatsApp or email",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task": {"type": "string", "description": "Detailed task description"},
+          "steps": {"type": "array", "description": "Specific steps to follow (optional)"},
+          "report_to": {"type": "string", "description": "How to report: 'whatsapp', 'email', 'both' (default: whatsapp)"},
+          "recipient": {"type": "string", "description": "Phone number or email for report"},
+          "deadline": {"type": "string", "description": "When task should be completed by"}
+        },
+        "required": ["task"]
+      }
+    },
+    {
+      "name": "sonia_schedule_task",
+      "description": "Schedule a task to run at a specific time",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task": {"type": "string", "description": "Task description"},
+          "run_at": {"type": "string", "description": "ISO datetime or cron expression"},
+          "repeat": {"type": "string", "description": "Repeat: once, daily, weekly, monthly"}
+        },
+        "required": ["task", "run_at"]
+      }
+    },
+    {
+      "name": "sonia_research",
+      "description": "Research a topic by browsing multiple sources and compiling information",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "topic": {"type": "string", "description": "Research topic or question"},
+          "sources": {"type": "array", "description": "Specific URLs to check"},
+          "depth": {"type": "string", "description": "Research depth: quick, standard, deep"},
+          "output_format": {"type": "string", "description": "Format: summary, report, bullet_points"}
+        },
+        "required": ["topic"]
+      }
+    }
+  ]
+}

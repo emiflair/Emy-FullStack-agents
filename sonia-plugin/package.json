@@ -1,0 +1,13 @@
+{
+  "name": "sonia",
+  "version": "1.0.0",
+  "description": "Sonia - Autonomous AI Assistant with email, browser, and social media capabilities",
+  "main": "index.js",
+  "openclaw": {
+    "pluginId": "sonia",
+    "displayName": "Sonia AI Assistant",
+    "description": "Autonomous assistant that can send emails, create accounts, post on social media, and complete tasks",
+    "author": "Emy",
+    "version": "1.0.0"
+  }
+}

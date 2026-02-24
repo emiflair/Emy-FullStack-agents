@@ -1,5 +1,5 @@
 {
-  "name": "@emy/openclaw-agents",
+  "name": "@emy/emy-agents",
   "version": "1.0.0",
   "description": "OpenClaw plugin to control Emy-FullStack AI Agent System",
   "main": "index.js",
