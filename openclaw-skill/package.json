@@ -1,0 +1,85 @@
+{
+  "name": "@emy/openclaw-agents",
+  "version": "1.0.0",
+  "description": "OpenClaw plugin to control Emy-FullStack AI Agent System",
+  "main": "index.js",
+  "keywords": ["openclaw", "plugin", "ai-agents", "emy"],
+  "author": "Emy",
+  "license": "MIT",
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "tools": [
+      {
+        "name": "emy_health",
+        "description": "Check health status of Emy-FullStack agent system"
+      },
+      {
+        "name": "emy_status", 
+        "description": "Get detailed status of all agents in Emy-FullStack"
+      },
+      {
+        "name": "emy_agents",
+        "description": "List all available agents and their capabilities"
+      },
+      {
+        "name": "emy_command",
+        "description": "Send a command to a specific agent",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "agent": {
+              "type": "string",
+              "description": "Agent type: backend, frontend, database, devops, qa, security, uiux, aiml, project_manager"
+            },
+            "task": {
+              "type": "string",
+              "description": "The task description for the agent"
+            }
+          },
+          "required": ["agent", "task"]
+        }
+      },
+      {
+        "name": "emy_generate",
+        "description": "Generate code using the AI agents",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Description of what code to generate"
+            },
+            "language": {
+              "type": "string",
+              "description": "Programming language",
+              "default": "python"
+            }
+          },
+          "required": ["prompt"]
+        }
+      },
+      {
+        "name": "emy_create_project",
+        "description": "Create a new project with specified agents",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Project name"
+            },
+            "description": {
+              "type": "string",
+              "description": "Project description"
+            },
+            "agents": {
+              "type": "string",
+              "description": "Comma-separated list of agents"
+            }
+          },
+          "required": ["name"]
+        }
+      }
+    ]
+  }
+}

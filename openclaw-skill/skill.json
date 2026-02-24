@@ -1,0 +1,46 @@
+{
+  "name": "emy-agents",
+  "version": "1.0.0",
+  "description": "Control Emy-FullStack AI Agent System via WhatsApp/Telegram/Discord",
+  "author": "Emy",
+  "entry": "index.js",
+  "tools": [
+    {
+      "name": "emy_health",
+      "description": "Check health status of Emy-FullStack agent system"
+    },
+    {
+      "name": "emy_status",
+      "description": "Get detailed status of all agents in Emy-FullStack"
+    },
+    {
+      "name": "emy_agents",
+      "description": "List all available agents and their capabilities"
+    },
+    {
+      "name": "emy_command",
+      "description": "Send a command to a specific agent",
+      "parameters": {
+        "agent": "The agent to send the command to (backend, frontend, database, devops, qa, security, uiux, aiml, project_manager)",
+        "task": "The task description for the agent"
+      }
+    },
+    {
+      "name": "emy_generate",
+      "description": "Generate code using the AI agents",
+      "parameters": {
+        "prompt": "Description of what code to generate",
+        "language": "Programming language (python, javascript, typescript, etc.)"
+      }
+    },
+    {
+      "name": "emy_create_project",
+      "description": "Create a new project with specified agents",
+      "parameters": {
+        "name": "Project name",
+        "description": "Project description",
+        "agents": "Comma-separated list of agents to assign"
+      }
+    }
+  ]
+}
