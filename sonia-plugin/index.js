@@ -805,6 +805,75 @@ Need anything else?`;
   return summary;
 }
 
+/**
+ * Send SMS via Twilio
+ */
+async function sonia_send_sms({ to, message }) {
+  if (!to || !message) {
+    return { success: false, error: 'Both "to" phone number and "message" are required' };
+  }
+
+  // Ensure phone number has + prefix
+  const phoneNumber = to.startsWith('+') ? to : `+${to}`;
+  
+  // Use the sonia-sms script
+  const result = runCommand(`/usr/local/bin/sonia-sms "${phoneNumber}" "${message.replace(/"/g, '\\"')}"`, 30000);
+  
+  if (result.success && result.output) {
+    try {
+      const response = JSON.parse(result.output);
+      if (response.sid) {
+        return {
+          success: true,
+          message_sid: response.sid,
+          to: response.to,
+          status: response.status,
+          message: `SMS sent to ${phoneNumber}`
+        };
+      } else if (response.code) {
+        return { success: false, error: response.message || 'Twilio error', code: response.code };
+      }
+    } catch (e) {
+      return { success: true, output: result.output };
+    }
+  }
+  
+  return { success: false, error: result.error || 'Failed to send SMS' };
+}
+
+/**
+ * Receive/check SMS messages
+ */
+async function sonia_check_sms({ limit = 10 }) {
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID || '';
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN || '';
+  
+  if (!twilioSid || !twilioToken) {
+    return { success: false, error: 'Twilio credentials not configured' };
+  }
+  
+  const result = runCommand(`curl -s "https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json?PageSize=${limit}" -u "${twilioSid}:${twilioToken}"`, 30000);
+  
+  if (result.success && result.output) {
+    try {
+      const data = JSON.parse(result.output);
+      const messages = (data.messages || []).map(m => ({
+        from: m.from,
+        to: m.to,
+        body: m.body,
+        status: m.status,
+        date: m.date_sent,
+        direction: m.direction
+      }));
+      return { success: true, messages, count: messages.length };
+    } catch (e) {
+      return { success: false, error: 'Failed to parse SMS response' };
+    }
+  }
+  
+  return { success: false, error: result.error || 'Failed to fetch SMS' };
+}
+
 // OpenClaw Extension Export
 module.exports = function soniaExtension(ctx) {
   return {
@@ -845,7 +914,11 @@ module.exports = function soniaExtension(ctx) {
       sonia_list_follow_ups,
       sonia_process_follow_ups,
       sonia_remind_me,
-      sonia_daily_summary
+      sonia_daily_summary,
+      
+      // SMS via Twilio
+      sonia_send_sms,
+      sonia_check_sms
     }
   };
 };

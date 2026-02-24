@@ -247,6 +247,28 @@
         },
         "required": ["topic"]
       }
+    },
+    {
+      "name": "sonia_send_sms",
+      "description": "Send SMS message via Twilio from +15137128583",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "Recipient phone number with country code (e.g., +1234567890)"},
+          "message": {"type": "string", "description": "SMS message content (max 160 chars per segment)"}
+        },
+        "required": ["to", "message"]
+      }
+    },
+    {
+      "name": "sonia_check_sms",
+      "description": "Check received SMS messages on the Twilio number",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {"type": "number", "description": "Maximum messages to fetch (default: 10)"}
+        }
+      }
     }
   ]
 }
