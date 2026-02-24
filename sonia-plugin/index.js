@@ -1,5 +1,5 @@
 /**
- * Sonia AI Assistant Plugin for OpenClaw v2.0
+ * Sonia AI Assistant Plugin for OpenClaw v3.0 - Money Making Edition
  * 
  * Autonomous AI assistant with capabilities for:
  * - Email (send/receive via Zoho)
@@ -8,6 +8,8 @@
  * - Social media posting and engagement (browser-based)
  * - Task persistence with SQLite database
  * - Follow-up reminders and proactive notifications
+ * - Money Making: Freelance jobs, Micro-tasks, Trading, Affiliates
+ * - Earnings tracking and financial reporting
  */
 
 const { execSync, spawn } = require('child_process');
@@ -69,6 +71,41 @@ function initDatabase() {
       results TEXT,
       source TEXT,
       cached_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS earnings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT DEFAULT 'USD',
+      description TEXT,
+      job_id TEXT,
+      platform TEXT,
+      earned_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      platform TEXT NOT NULL,
+      job_id TEXT,
+      title TEXT,
+      description TEXT,
+      budget TEXT,
+      url TEXT,
+      status TEXT DEFAULT 'found',
+      applied_at TEXT,
+      outcome TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS trades (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      exchange TEXT,
+      pair TEXT,
+      side TEXT,
+      amount REAL,
+      price REAL,
+      profit_loss REAL,
+      status TEXT DEFAULT 'open',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      closed_at TEXT
     );
   `;
   try {
@@ -874,11 +911,347 @@ async function sonia_check_sms({ limit = 10 }) {
   return { success: false, error: result.error || 'Failed to fetch SMS' };
 }
 
+// ============================================
+// MONEY-MAKING MODULE - Autonomous Income
+// ============================================
+
+/**
+ * Search for freelance jobs on various platforms
+ */
+async function sonia_find_jobs({ platform = 'all', skills = [], min_budget = 0, keywords = '' }) {
+  const platforms = {
+    upwork: 'https://www.upwork.com/nx/search/jobs/?q=',
+    fiverr: 'https://www.fiverr.com/search/gigs?query=',
+    freelancer: 'https://www.freelancer.com/jobs/?keyword=',
+    peopleperhour: 'https://www.peopleperhour.com/freelance-jobs?q=',
+    guru: 'https://www.guru.com/d/jobs/q/',
+    toptal: 'https://www.toptal.com/freelance-jobs'
+  };
+  
+  const searchTerms = keywords || skills.join(' ') || 'ai automation python javascript';
+  const jobs = [];
+  
+  const platformsToSearch = platform === 'all' 
+    ? Object.keys(platforms) 
+    : [platform];
+  
+  for (const plat of platformsToSearch.slice(0, 3)) {
+    if (!platforms[plat]) continue;
+    
+    const url = platforms[plat] + encodeURIComponent(searchTerms);
+    const result = runCommand(`chromium --headless --dump-dom "${url}" 2>/dev/null | head -500`, 60000);
+    
+    if (result.success) {
+      // Parse job listings (simplified - real implementation would parse HTML properly)
+      const jobMatches = result.output.match(/(?:job|gig|project)[^<]{20,200}/gi) || [];
+      jobMatches.slice(0, 5).forEach((match, i) => {
+        jobs.push({
+          platform: plat,
+          title: match.slice(0, 100),
+          url: url,
+          found_at: new Date().toISOString()
+        });
+      });
+    }
+  }
+  
+  // Save jobs to database
+  for (const job of jobs) {
+    runCommand(`sqlite3 "${CONFIG.db_path}" "INSERT INTO jobs (platform, title, url, status) VALUES ('${job.platform}', '${job.title.replace(/'/g, "''")}', '${job.url}', 'found')"`);
+  }
+  
+  sendNotification(`🔍 Found ${jobs.length} potential jobs across ${platformsToSearch.length} platforms`, 'telegram');
+  
+  return { success: true, jobs, count: jobs.length };
+}
+
+/**
+ * Apply to a job (browser-based)
+ */
+async function sonia_apply_job({ platform, job_url, cover_letter, bid_amount }) {
+  if (!job_url) {
+    return { success: false, error: 'Job URL required' };
+  }
+  
+  // Navigate to job and take screenshot for review
+  const screenshot = `${CONFIG.screenshots_dir}/job_${Date.now()}.png`;
+  runCommand(`chromium --headless --screenshot="${screenshot}" "${job_url}" 2>/dev/null`);
+  
+  // Log the application attempt
+  runCommand(`sqlite3 "${CONFIG.db_path}" "INSERT INTO jobs (platform, url, status, applied_at) VALUES ('${platform || 'unknown'}', '${job_url}', 'applied', datetime('now'))"`);
+  
+  sendNotification(`📝 Job application prepared for review:\n${job_url}\nBid: $${bid_amount || 'TBD'}\n\nScreenshot saved. Awaiting confirmation to submit.`, 'telegram');
+  
+  return { 
+    success: true, 
+    status: 'prepared',
+    screenshot,
+    message: 'Application prepared - needs your confirmation to submit'
+  };
+}
+
+/**
+ * Search for micro-tasks and quick gigs
+ */
+async function sonia_find_micro_tasks({ category = 'all' }) {
+  const platforms = [
+    { name: 'Amazon MTurk', url: 'https://worker.mturk.com/', type: 'microtask' },
+    { name: 'Clickworker', url: 'https://www.clickworker.com/clickworker/', type: 'microtask' },
+    { name: 'Appen', url: 'https://connect.appen.com/', type: 'ai-training' },
+    { name: 'Remotasks', url: 'https://www.remotasks.com/', type: 'ai-training' },
+    { name: 'Swagbucks', url: 'https://www.swagbucks.com/', type: 'surveys' },
+    { name: 'UserTesting', url: 'https://www.usertesting.com/', type: 'testing' },
+    { name: 'Testlio', url: 'https://testlio.com/', type: 'testing' }
+  ];
+  
+  const tasks = [];
+  
+  for (const platform of platforms.slice(0, 3)) {
+    const result = runCommand(`curl -s -A "Mozilla/5.0" "${platform.url}" | head -200`, 30000);
+    if (result.success) {
+      tasks.push({
+        platform: platform.name,
+        url: platform.url,
+        type: platform.type,
+        status: 'available'
+      });
+    }
+  }
+  
+  return { 
+    success: true, 
+    platforms: tasks,
+    message: 'Micro-task platforms checked. Sign up and connect accounts for automated task completion.'
+  };
+}
+
+/**
+ * Get crypto prices and market data
+ */
+async function sonia_get_crypto_prices({ coins = ['bitcoin', 'ethereum'] }) {
+  const coinList = coins.join(',');
+  const result = runCommand(`curl -s "https://api.coingecko.com/api/v3/simple/price?ids=${coinList}&vs_currencies=usd&include_24hr_change=true"`, 15000);
+  
+  if (result.success && result.output) {
+    try {
+      const prices = JSON.parse(result.output);
+      return { success: true, prices };
+    } catch (e) {
+      return { success: false, error: 'Failed to parse prices' };
+    }
+  }
+  
+  return { success: false, error: result.error };
+}
+
+/**
+ * Execute crypto trade (requires exchange API keys)
+ */
+async function sonia_crypto_trade({ exchange = 'binance', action, pair, amount, price_type = 'market' }) {
+  // Check for API keys
+  const apiKey = process.env[`${exchange.toUpperCase()}_API_KEY`];
+  const apiSecret = process.env[`${exchange.toUpperCase()}_API_SECRET`];
+  
+  if (!apiKey || !apiSecret) {
+    return { 
+      success: false, 
+      error: `${exchange} API keys not configured. Set ${exchange.toUpperCase()}_API_KEY and ${exchange.toUpperCase()}_API_SECRET`,
+      setup_instructions: `1. Create API key on ${exchange}\n2. Add to server .env\n3. Restart Sonia`
+    };
+  }
+  
+  // For safety, require confirmation for real trades
+  const tradeId = Date.now();
+  runCommand(`sqlite3 "${CONFIG.db_path}" "INSERT INTO trades (exchange, pair, side, amount, status) VALUES ('${exchange}', '${pair}', '${action}', ${amount}, 'pending_confirmation')"`);
+  
+  sendNotification(`⚠️ Trade confirmation needed:\n${action.toUpperCase()} ${amount} ${pair} on ${exchange}\n\nReply "CONFIRM TRADE ${tradeId}" to execute`, 'telegram');
+  
+  return {
+    success: true,
+    status: 'pending_confirmation',
+    trade_id: tradeId,
+    message: 'Trade requires your confirmation via Telegram'
+  };
+}
+
+/**
+ * Monitor trading signals and opportunities
+ */
+async function sonia_trading_signals({ pairs = ['BTCUSDT', 'ETHUSDT'] }) {
+  const signals = [];
+  
+  // Get Fear & Greed Index
+  const fgiResult = runCommand(`curl -s "https://api.alternative.me/fng/?limit=1"`, 10000);
+  let fearGreed = null;
+  if (fgiResult.success) {
+    try {
+      const fgi = JSON.parse(fgiResult.output);
+      fearGreed = fgi.data?.[0];
+    } catch (e) {}
+  }
+  
+  // Get trending coins
+  const trendingResult = runCommand(`curl -s "https://api.coingecko.com/api/v3/search/trending"`, 15000);
+  let trending = [];
+  if (trendingResult.success) {
+    try {
+      const data = JSON.parse(trendingResult.output);
+      trending = data.coins?.slice(0, 5).map(c => c.item?.name) || [];
+    } catch (e) {}
+  }
+  
+  return {
+    success: true,
+    fear_greed_index: fearGreed ? { value: fearGreed.value, classification: fearGreed.value_classification } : null,
+    trending_coins: trending,
+    recommendation: fearGreed?.value < 25 ? 'EXTREME FEAR - Potential buying opportunity' : 
+                    fearGreed?.value > 75 ? 'EXTREME GREED - Consider taking profits' : 
+                    'NEUTRAL - Monitor market'
+  };
+}
+
+/**
+ * Track earnings and income
+ */
+async function sonia_record_earning({ source, amount, currency = 'USD', description = '', platform = '' }) {
+  if (!source || !amount) {
+    return { success: false, error: 'Source and amount required' };
+  }
+  
+  runCommand(`sqlite3 "${CONFIG.db_path}" "INSERT INTO earnings (source, amount, currency, description, platform) VALUES ('${source}', ${amount}, '${currency}', '${description.replace(/'/g, "''")}', '${platform}')"`);
+  
+  sendNotification(`💰 Earning recorded: $${amount} ${currency} from ${source}`, 'telegram');
+  
+  return { success: true, message: `Recorded $${amount} from ${source}` };
+}
+
+/**
+ * Get earnings summary
+ */
+async function sonia_earnings_report({ period = 'all' }) {
+  let dateFilter = '';
+  if (period === 'today') dateFilter = "AND date(earned_at) = date('now')";
+  else if (period === 'week') dateFilter = "AND earned_at >= datetime('now', '-7 days')";
+  else if (period === 'month') dateFilter = "AND earned_at >= datetime('now', '-30 days')";
+  
+  const totalResult = runCommand(`sqlite3 "${CONFIG.db_path}" "SELECT COALESCE(SUM(amount), 0) FROM earnings WHERE 1=1 ${dateFilter}"`);
+  const bySourceResult = runCommand(`sqlite3 "${CONFIG.db_path}" "SELECT source, SUM(amount) FROM earnings WHERE 1=1 ${dateFilter} GROUP BY source ORDER BY SUM(amount) DESC LIMIT 10"`);
+  const countResult = runCommand(`sqlite3 "${CONFIG.db_path}" "SELECT COUNT(*) FROM earnings WHERE 1=1 ${dateFilter}"`);
+  
+  const total = parseFloat(totalResult.output) || 0;
+  const sources = bySourceResult.output?.split('\n').filter(Boolean).map(line => {
+    const [source, amount] = line.split('|');
+    return { source, amount: parseFloat(amount) || 0 };
+  }) || [];
+  
+  const report = `📊 **Earnings Report (${period})**\n\n💰 Total: $${total.toFixed(2)}\n📈 Transactions: ${countResult.output || 0}\n\n**By Source:**\n${sources.map(s => `• ${s.source}: $${s.amount.toFixed(2)}`).join('\n') || 'No earnings yet'}`;
+  
+  sendNotification(report, 'telegram');
+  
+  return { success: true, total, sources, period, transactions: parseInt(countResult.output) || 0 };
+}
+
+/**
+ * Find affiliate programs and opportunities
+ */
+async function sonia_find_affiliates({ niche = 'technology' }) {
+  const affiliateNetworks = [
+    { name: 'Amazon Associates', url: 'https://affiliate-program.amazon.com/', commission: '1-10%' },
+    { name: 'ShareASale', url: 'https://www.shareasale.com/', commission: 'Varies' },
+    { name: 'CJ Affiliate', url: 'https://www.cj.com/', commission: 'Varies' },
+    { name: 'Rakuten', url: 'https://rakutenadvertising.com/', commission: 'Varies' },
+    { name: 'ClickBank', url: 'https://www.clickbank.com/', commission: 'Up to 75%' },
+    { name: 'Impact', url: 'https://impact.com/', commission: 'Varies' },
+    { name: 'Awin', url: 'https://www.awin.com/', commission: 'Varies' }
+  ];
+  
+  return {
+    success: true,
+    networks: affiliateNetworks,
+    recommendation: `For ${niche} niche, consider: Amazon Associates for products, ShareASale for variety, or niche-specific programs.`,
+    next_steps: [
+      '1. Sign up for affiliate networks',
+      '2. Get approved for relevant programs',
+      '3. Share affiliate links via content/social media',
+      '4. Track conversions and earnings'
+    ]
+  };
+}
+
+/**
+ * Content monetization opportunities
+ */
+async function sonia_content_monetization({ platform = 'all' }) {
+  const opportunities = [
+    { platform: 'YouTube', requirements: '1000 subs, 4000 watch hours', earning: 'Ad revenue, sponsorships' },
+    { platform: 'TikTok', requirements: '10k followers, 100k views', earning: 'Creator Fund, sponsorships' },
+    { platform: 'Medium', requirements: 'Partner Program', earning: 'Per-read earnings' },
+    { platform: 'Substack', requirements: 'None', earning: 'Paid subscriptions' },
+    { platform: 'Gumroad', requirements: 'None', earning: 'Digital product sales' },
+    { platform: 'Teachable', requirements: 'None', earning: 'Course sales' },
+    { platform: 'Patreon', requirements: 'None', earning: 'Monthly subscriptions' }
+  ];
+  
+  return {
+    success: true,
+    opportunities,
+    ai_content_ideas: [
+      'AI automation tutorials',
+      'Coding guides and templates',
+      'Tech reviews and comparisons',
+      'Productivity tools and tips'
+    ]
+  };
+}
+
+/**
+ * Auto-generate income opportunities report
+ */
+async function sonia_money_opportunities() {
+  // Check current market conditions
+  const cryptoResult = await sonia_get_crypto_prices({ coins: ['bitcoin', 'ethereum'] });
+  const signalsResult = await sonia_trading_signals({});
+  const earningsResult = await sonia_earnings_report({ period: 'month' });
+  
+  // Find new jobs
+  const jobsResult = await sonia_find_jobs({ keywords: 'ai automation bot python', platform: 'upwork' });
+  
+  const report = `
+🤖 **Sonia Money Opportunities Report**
+
+📈 **Market Conditions:**
+${signalsResult.fear_greed_index ? `Fear & Greed: ${signalsResult.fear_greed_index.value} (${signalsResult.fear_greed_index.classification})` : 'Unable to fetch'}
+${signalsResult.recommendation || ''}
+
+💼 **Jobs Found:** ${jobsResult.count || 0} new opportunities
+
+💰 **This Month's Earnings:** $${earningsResult.total?.toFixed(2) || '0.00'}
+
+🎯 **Recommended Actions:**
+1. ${signalsResult.fear_greed_index?.value < 30 ? 'Consider crypto positions - market fearful' : 'Monitor crypto markets'}
+2. Apply to ${jobsResult.count || 0} matching freelance jobs
+3. Check micro-task platforms for quick earnings
+4. Create content for passive income
+
+Need me to execute any of these?
+`;
+  
+  sendNotification(report, 'telegram');
+  
+  return { 
+    success: true, 
+    report,
+    market: signalsResult,
+    jobs: jobsResult.count,
+    monthly_earnings: earningsResult.total
+  };
+}
+
 // OpenClaw Extension Export
 module.exports = function soniaExtension(ctx) {
   return {
     name: 'sonia',
-    description: 'Sonia AI Assistant v2.0 - Browser Search, Social Media, Task Persistence, Follow-ups',
+    description: 'Sonia AI Assistant v3.0 - Money Making Edition: Jobs, Trading, Micro-tasks, Earnings Tracking',
     
     tools: {
       // Email
@@ -918,7 +1291,26 @@ module.exports = function soniaExtension(ctx) {
       
       // SMS via Twilio
       sonia_send_sms,
-      sonia_check_sms
+      sonia_check_sms,
+      
+      // Money Making - Freelance & Jobs
+      sonia_find_jobs,
+      sonia_apply_job,
+      sonia_find_micro_tasks,
+      
+      // Money Making - Trading
+      sonia_get_crypto_prices,
+      sonia_crypto_trade,
+      sonia_trading_signals,
+      
+      // Money Making - Earnings & Tracking
+      sonia_record_earning,
+      sonia_earnings_report,
+      
+      // Money Making - Passive Income
+      sonia_find_affiliates,
+      sonia_content_monetization,
+      sonia_money_opportunities
     }
   };
 };

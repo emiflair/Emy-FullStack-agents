@@ -1,9 +1,9 @@
 {
   "id": "sonia",
   "pluginId": "sonia",
-  "displayName": "Sonia AI Assistant v2.0",
-  "version": "2.0.0",
-  "description": "Autonomous AI assistant - Browser search, social media, task persistence, follow-ups",
+  "displayName": "Sonia AI Assistant v3.0 - Money Making Edition",
+  "version": "3.0.0",
+  "description": "Autonomous AI assistant - Jobs, Trading, Micro-tasks, Affiliates, Earnings Tracking",
   "author": "Emy",
   "configSchema": {
     "type": "object",
@@ -268,6 +268,131 @@
         "properties": {
           "limit": {"type": "number", "description": "Maximum messages to fetch (default: 10)"}
         }
+      }
+    },
+    {
+      "name": "sonia_find_jobs",
+      "description": "Search for freelance jobs on Upwork, Fiverr, Freelancer, and other platforms",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string", "description": "Platform: upwork, fiverr, freelancer, peopleperhour, guru, or 'all'"},
+          "skills": {"type": "array", "description": "Skills to search for"},
+          "min_budget": {"type": "number", "description": "Minimum budget filter"},
+          "keywords": {"type": "string", "description": "Search keywords"}
+        }
+      }
+    },
+    {
+      "name": "sonia_apply_job",
+      "description": "Apply to a freelance job (prepares application for your review)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string", "description": "Platform name"},
+          "job_url": {"type": "string", "description": "URL of the job posting"},
+          "cover_letter": {"type": "string", "description": "Cover letter/proposal text"},
+          "bid_amount": {"type": "number", "description": "Bid amount in USD"}
+        },
+        "required": ["job_url"]
+      }
+    },
+    {
+      "name": "sonia_find_micro_tasks",
+      "description": "Find micro-tasks on MTurk, Clickworker, Remotasks, and similar platforms",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {"type": "string", "description": "Category: microtask, ai-training, surveys, testing, or 'all'"}
+        }
+      }
+    },
+    {
+      "name": "sonia_get_crypto_prices",
+      "description": "Get current cryptocurrency prices and 24h changes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "coins": {"type": "array", "description": "Coin IDs: bitcoin, ethereum, solana, etc."}
+        }
+      }
+    },
+    {
+      "name": "sonia_crypto_trade",
+      "description": "Execute a crypto trade (requires exchange API keys, needs confirmation)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exchange": {"type": "string", "description": "Exchange: binance, coinbase, kraken"},
+          "action": {"type": "string", "description": "Action: buy or sell"},
+          "pair": {"type": "string", "description": "Trading pair: BTCUSDT, ETHUSDT, etc."},
+          "amount": {"type": "number", "description": "Amount to trade"},
+          "price_type": {"type": "string", "description": "Order type: market or limit"}
+        },
+        "required": ["action", "pair", "amount"]
+      }
+    },
+    {
+      "name": "sonia_trading_signals",
+      "description": "Get trading signals, Fear & Greed index, and trending coins",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pairs": {"type": "array", "description": "Trading pairs to analyze"}
+        }
+      }
+    },
+    {
+      "name": "sonia_record_earning",
+      "description": "Record an earning/income for tracking",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "source": {"type": "string", "description": "Income source (freelance, trading, affiliate, etc.)"},
+          "amount": {"type": "number", "description": "Amount earned"},
+          "currency": {"type": "string", "description": "Currency (USD, EUR, etc.)"},
+          "description": {"type": "string", "description": "Description of earning"},
+          "platform": {"type": "string", "description": "Platform name"}
+        },
+        "required": ["source", "amount"]
+      }
+    },
+    {
+      "name": "sonia_earnings_report",
+      "description": "Get earnings summary report for a period",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "period": {"type": "string", "description": "Period: today, week, month, or 'all'"}
+        }
+      }
+    },
+    {
+      "name": "sonia_find_affiliates",
+      "description": "Find affiliate programs and networks for a niche",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "niche": {"type": "string", "description": "Niche/category: technology, finance, health, etc."}
+        }
+      }
+    },
+    {
+      "name": "sonia_content_monetization",
+      "description": "Find content monetization opportunities (YouTube, Medium, courses, etc.)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string", "description": "Platform to focus on or 'all'"}
+        }
+      }
+    },
+    {
+      "name": "sonia_money_opportunities",
+      "description": "Generate full money opportunities report with market conditions, jobs, and recommendations",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
       }
     }
   ]
