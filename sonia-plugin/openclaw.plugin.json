@@ -1,14 +1,15 @@
 {
   "id": "sonia",
   "pluginId": "sonia",
-  "displayName": "Sonia AI Assistant",
-  "version": "1.0.0",
-  "description": "Autonomous AI assistant for emails, account creation, social media, and task completion",
+  "displayName": "Sonia AI Assistant v2.0",
+  "version": "2.0.0",
+  "description": "Autonomous AI assistant - Browser search, social media, task persistence, follow-ups",
   "author": "Emy",
   "configSchema": {
     "type": "object",
     "properties": {
       "email": {"type": "string", "default": "sonia@wazhop.com"},
+      "telegram_user": {"type": "string", "default": "6116923763"},
       "whatsapp": {"type": "string", "default": "+971551994544"}
     }
   },
@@ -22,133 +23,227 @@
           "to": {"type": "string", "description": "Recipient email address"},
           "subject": {"type": "string", "description": "Email subject"},
           "body": {"type": "string", "description": "Email body content (plain text or HTML)"},
-          "cc": {"type": "string", "description": "CC recipients (comma-separated)"},
-          "attachments": {"type": "string", "description": "File paths to attach (comma-separated)"}
+          "cc": {"type": "string", "description": "CC recipients (comma-separated)"}
         },
         "required": ["to", "subject", "body"]
       }
     },
     {
       "name": "sonia_check_email",
-      "description": "Check and read incoming emails for sonia@wazhop.com. Returns latest unread emails.",
+      "description": "Check and read incoming emails for sonia@wazhop.com",
       "inputSchema": {
         "type": "object",
         "properties": {
           "folder": {"type": "string", "description": "Email folder (INBOX, Sent, etc.)"},
-          "limit": {"type": "number", "description": "Maximum emails to fetch (default: 10)"},
+          "limit": {"type": "number", "description": "Maximum emails to fetch"},
           "unread_only": {"type": "boolean", "description": "Only show unread emails"}
         }
       }
     },
     {
-      "name": "sonia_reply_email",
-      "description": "Reply to an email",
+      "name": "sonia_web_search",
+      "description": "Search the web using browser (Google, DuckDuckGo, Brave). No API needed.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "message_id": {"type": "string", "description": "Original message ID to reply to"},
-          "body": {"type": "string", "description": "Reply content"}
+          "query": {"type": "string", "description": "Search query"},
+          "engine": {"type": "string", "description": "Search engine: google, duckduckgo, brave"},
+          "num_results": {"type": "number", "description": "Number of results to fetch"},
+          "screenshot": {"type": "boolean", "description": "Take screenshot of results"}
         },
-        "required": ["message_id", "body"]
+        "required": ["query"]
       }
     },
     {
-      "name": "sonia_create_account",
-      "description": "Create an account on a website using browser automation. Sonia will fill forms, verify emails, and complete signup.",
+      "name": "sonia_get_trending",
+      "description": "Get trending topics from Twitter, Reddit, Google Trends, HackerNews via browser",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "website": {"type": "string", "description": "Website URL (e.g., https://example.com/signup)"},
-          "username": {"type": "string", "description": "Desired username"},
-          "email": {"type": "string", "description": "Email to use (default: sonia@wazhop.com)"},
-          "password": {"type": "string", "description": "Password to use"},
-          "full_name": {"type": "string", "description": "Full name to use (default: Sonia Wazhop)"},
-          "details": {"type": "object", "description": "Additional fields as key-value pairs"}
-        },
-        "required": ["website"]
+          "source": {"type": "string", "description": "Source: twitter, reddit, google_trends, hackernews, producthunt"},
+          "category": {"type": "string", "description": "Category/topic filter"},
+          "country": {"type": "string", "description": "Country code (US, UK, etc.)"}
+        }
       }
     },
     {
-      "name": "sonia_social_post",
-      "description": "Post content to social media platforms (requires logged-in session)",
+      "name": "sonia_deep_research",
+      "description": "Research a topic across multiple sources (Google, Reddit, HackerNews, YouTube) via browser",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "platform": {"type": "string", "description": "Platform: twitter, linkedin, instagram, facebook, tiktok"},
-          "content": {"type": "string", "description": "Post content/caption"},
-          "media_path": {"type": "string", "description": "Local path to image/video to upload"},
-          "media_url": {"type": "string", "description": "URL of media to download and post"},
-          "hashtags": {"type": "array", "description": "Hashtags to include"}
+          "topic": {"type": "string", "description": "Research topic"},
+          "sources": {"type": "array", "description": "Sources to search: google, reddit, hackernews, youtube"},
+          "save_report": {"type": "boolean", "description": "Save report to file"}
+        },
+        "required": ["topic"]
+      }
+    },
+    {
+      "name": "sonia_social_post_browser",
+      "description": "Post to social media using browser automation (Twitter, LinkedIn, Facebook, Instagram, Reddit)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "platform": {"type": "string", "description": "Platform: twitter, linkedin, facebook, instagram, reddit"},
+          "content": {"type": "string", "description": "Post content"},
+          "media_path": {"type": "string", "description": "Path to image/video to upload"},
+          "hashtags": {"type": "array", "description": "Hashtags to add"}
         },
         "required": ["platform", "content"]
       }
     },
     {
-      "name": "sonia_social_engage",
-      "description": "Engage with social media content (like, comment, share, follow)",
+      "name": "sonia_social_monitor",
+      "description": "Monitor social media for mentions or topics via browser",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "platform": {"type": "string", "description": "Social media platform"},
-          "action": {"type": "string", "description": "Action: like, comment, share, follow, unfollow"},
-          "target_url": {"type": "string", "description": "URL of post/profile"},
-          "comment_text": {"type": "string", "description": "Comment text if action is comment"}
+          "platform": {"type": "string", "description": "Platform to monitor"},
+          "search_term": {"type": "string", "description": "Term to search for"},
+          "action_on_find": {"type": "string", "description": "Action to take: notify, screenshot, engage"}
         },
-        "required": ["platform", "action", "target_url"]
+        "required": ["platform", "search_term"]
       }
     },
     {
-      "name": "sonia_browse_web",
-      "description": "Browse a website, interact with elements, fill forms, click buttons, extract data",
+      "name": "sonia_create_task",
+      "description": "Create a persistent task with optional reminder",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "url": {"type": "string", "description": "URL to visit"},
-          "actions": {"type": "array", "description": "Array of actions: [{action: 'click|fill|extract|screenshot|scroll', selector: 'css', value: 'text'}]"},
-          "wait_for": {"type": "string", "description": "CSS selector to wait for before actions"},
-          "extract_text": {"type": "boolean", "description": "Extract all visible text from page"}
+          "title": {"type": "string", "description": "Task title"},
+          "description": {"type": "string", "description": "Task details"},
+          "priority": {"type": "number", "description": "Priority 1-10 (10 highest)"},
+          "due_date": {"type": "string", "description": "Due date (YYYY-MM-DD)"},
+          "tags": {"type": "array", "description": "Tags for categorization"},
+          "reminder": {"type": "string", "description": "Reminder time (YYYY-MM-DD HH:MM)"}
         },
-        "required": ["url"]
+        "required": ["title"]
+      }
+    },
+    {
+      "name": "sonia_list_tasks",
+      "description": "List all tasks with optional filtering",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "description": "Filter by status: pending, in_progress, completed"},
+          "priority_min": {"type": "number", "description": "Minimum priority"},
+          "tag": {"type": "string", "description": "Filter by tag"},
+          "limit": {"type": "number", "description": "Max results"}
+        }
+      }
+    },
+    {
+      "name": "sonia_update_task",
+      "description": "Update a task status or details",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {"type": "number", "description": "Task ID"},
+          "status": {"type": "string", "description": "New status: pending, in_progress, completed, cancelled"},
+          "notes": {"type": "string", "description": "Add notes"},
+          "priority": {"type": "number", "description": "New priority"}
+        },
+        "required": ["task_id"]
+      }
+    },
+    {
+      "name": "sonia_delete_task",
+      "description": "Delete a task",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {"type": "number", "description": "Task ID to delete"}
+        },
+        "required": ["task_id"]
+      }
+    },
+    {
+      "name": "sonia_set_follow_up",
+      "description": "Set a follow-up reminder to be sent at a specific time",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "task_id": {"type": "number", "description": "Related task ID (optional)"},
+          "contact": {"type": "string", "description": "Contact to notify"},
+          "channel": {"type": "string", "description": "Channel: telegram, whatsapp, email"},
+          "message": {"type": "string", "description": "Reminder message"},
+          "remind_at": {"type": "string", "description": "When to remind (YYYY-MM-DD HH:MM or HH:MM)"}
+        },
+        "required": ["message", "remind_at"]
+      }
+    },
+    {
+      "name": "sonia_list_follow_ups",
+      "description": "List all scheduled follow-ups",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "include_sent": {"type": "boolean", "description": "Include already sent reminders"}
+        }
+      }
+    },
+    {
+      "name": "sonia_remind_me",
+      "description": "Quick shortcut to set a simple reminder",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {"type": "string", "description": "What to remind about"},
+          "in_minutes": {"type": "number", "description": "Remind in X minutes"},
+          "at_time": {"type": "string", "description": "Remind at specific time"}
+        },
+        "required": ["message"]
+      }
+    },
+    {
+      "name": "sonia_daily_summary",
+      "description": "Get a daily summary of tasks and follow-ups",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "sonia_create_account",
+      "description": "Create an account on a website using browser automation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "website": {"type": "string", "description": "Website URL"},
+          "username": {"type": "string", "description": "Desired username"},
+          "email": {"type": "string", "description": "Email to use"},
+          "password": {"type": "string", "description": "Password to use"},
+          "full_name": {"type": "string", "description": "Full name"},
+          "details": {"type": "object", "description": "Additional fields"}
+        },
+        "required": ["website"]
       }
     },
     {
       "name": "sonia_complete_task",
-      "description": "Execute a complex multi-step task autonomously and report results via WhatsApp or email",
+      "description": "Execute a complex multi-step task autonomously",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "task": {"type": "string", "description": "Detailed task description"},
-          "steps": {"type": "array", "description": "Specific steps to follow (optional)"},
-          "report_to": {"type": "string", "description": "How to report: 'whatsapp', 'email', 'both' (default: whatsapp)"},
-          "recipient": {"type": "string", "description": "Phone number or email for report"},
-          "deadline": {"type": "string", "description": "When task should be completed by"}
+          "task": {"type": "string", "description": "Task description"},
+          "report_to": {"type": "string", "description": "How to report: telegram, whatsapp, email"},
+          "recipient": {"type": "string", "description": "Report recipient"}
         },
         "required": ["task"]
       }
     },
     {
-      "name": "sonia_schedule_task",
-      "description": "Schedule a task to run at a specific time",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "task": {"type": "string", "description": "Task description"},
-          "run_at": {"type": "string", "description": "ISO datetime or cron expression"},
-          "repeat": {"type": "string", "description": "Repeat: once, daily, weekly, monthly"}
-        },
-        "required": ["task", "run_at"]
-      }
-    },
-    {
       "name": "sonia_research",
-      "description": "Research a topic by browsing multiple sources and compiling information",
+      "description": "Research a topic by browsing multiple sources",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "topic": {"type": "string", "description": "Research topic or question"},
-          "sources": {"type": "array", "description": "Specific URLs to check"},
-          "depth": {"type": "string", "description": "Research depth: quick, standard, deep"},
-          "output_format": {"type": "string", "description": "Format: summary, report, bullet_points"}
+          "topic": {"type": "string", "description": "Research topic"},
+          "depth": {"type": "string", "description": "Depth: quick, standard, deep"},
+          "output_format": {"type": "string", "description": "Format: summary, report"}
         },
         "required": ["topic"]
       }
